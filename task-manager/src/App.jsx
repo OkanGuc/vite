@@ -1,10 +1,5 @@
-function App() {
-  return (
-    <div>
-      <h1>Mon Task Manager</h1>
-      <p>Bienvenue sur mon application !</p>
-    </div>
-  )
+import Home from './page/Home'
+function App(){
+  return <Home/>
 }
-
-export default App
+export default App;
