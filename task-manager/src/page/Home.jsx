@@ -1,34 +1,49 @@
 import { useState, useEffect } from 'react'
 import Liste from '../components/Liste'
 
+const API = 'http://localhost:3001'
+
 function Home() {
-  const [taches, setTaches] = useState(() => {
-    const sauvegarde = localStorage.getItem('taches')
-    return sauvegarde ? JSON.parse(sauvegarde) : []
-  })
+  const [taches, setTaches] = useState([])
   const [nouvelleTache, setNouvelleTache] = useState('')
 
   useEffect(() => {
-    localStorage.setItem('taches', JSON.stringify(taches))
-  }, [taches])
+    fetch(`${API}/taches`)
+      .then(res => res.json())
+      .then(data => setTaches(data))
+  }, [])
 
-  function ajouterTache() {
+  async function ajouterTache() {
     if (nouvelleTache === '') return
-    setTaches([...taches, { id: Date.now(), texte: nouvelleTache, faite: false }])
+    const res = await fetch(`${API}/taches`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texte: nouvelleTache })
+    })
+    const nouvelle = await res.json()
+    setTaches([...taches, nouvelle])
     setNouvelleTache('')
   }
 
-  function supprimerTache(id) {
+  async function supprimerTache(id) {
+    await fetch(`${API}/taches/${id}`, { method: 'DELETE' })
     setTaches(taches.filter(t => t.id !== id))
   }
 
-  function toggleTache(id) {
+  async function toggleTache(id) {
+    const tache = taches.find(t => t.id === id)
+    await fetch(`${API}/taches/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ faite: !tache.faite })
+    })
     setTaches(taches.map(t =>
       t.id === id ? { ...t, faite: !t.faite } : t
     ))
   }
 
-  function toutSupprimer() {
+  async function toutSupprimer() {
+    await fetch(`${API}/taches`, { method: 'DELETE' })
     setTaches([])
   }
 
@@ -40,7 +55,6 @@ function Home() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-md">
 
-        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
@@ -53,7 +67,6 @@ function Home() {
           </p>
         </div>
 
-        {/* Barre de progression */}
         {taches.length > 0 && (
           <div className="mb-6">
             <div className="flex justify-between text-xs text-gray-400 mb-1">
@@ -69,7 +82,6 @@ function Home() {
           </div>
         )}
 
-        {/* Input */}
         <div className="flex gap-2 mb-6">
           <input
             type="text"
@@ -87,14 +99,12 @@ function Home() {
           </button>
         </div>
 
-        {/* Liste */}
         <Liste
           taches={taches}
           onSupprimer={supprimerTache}
           onToggle={toggleTache}
         />
 
-        {/* Footer */}
         {taches.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
             <span className="text-xs text-gray-400">{tachesFaites} / {taches.length} complétées</span>
